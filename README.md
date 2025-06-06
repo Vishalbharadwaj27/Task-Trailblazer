@@ -201,6 +201,3 @@ If you encounter "Failed to fetch" errors:
 
 All data is stored in MongoDB and persists between sessions. The application includes seed data that is automatically loaded if the database is empty.
 
-=======
-# fsdproj
->>>>>>> 26982cb133b782fa91eb27a7b25491362606556a
