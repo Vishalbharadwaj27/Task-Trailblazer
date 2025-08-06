@@ -1,39 +1,48 @@
-
 import { useState, useEffect } from "react";
 import { Task, User } from "@/lib/types";
 import { userService } from "@/services/api";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { MessageSquare, Edit2, Trash2 } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 
 interface TaskCardProps {
   task: Task;
+  users: User[];
   onEdit?: (task: Task) => void;
   onDelete?: (taskId: string) => void;
 }
 
-export default function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
+export default function TaskCard({ task, users, onEdit, onDelete }: TaskCardProps) {
   const [assignee, setAssignee] = useState<User | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (task.assigneeId) {
-      userService.getUserById(task.assigneeId)
-        .then(user => {
-          setAssignee(user);
-        })
-        .catch(error => {
-          console.error("Error fetching assignee:", error);
-        });
+      const assignedUser = users.find(u => u.id === task.assigneeId);
+      setAssignee(assignedUser || null);
+    } else {
+      setAssignee(null);
     }
-  }, [task.assigneeId]);
+  }, [task.assigneeId, users]);
+
+  const getAssigneeName = () => {
+    if (!task.assigneeId) return "Unassigned";
+    return assignee?.name || "Unknown Assignee";
+  };
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent triggering parent click events
-    
+
     try {
       setIsDeleting(true);
       if (onDelete) onDelete(task.id);
@@ -49,17 +58,24 @@ export default function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
   };
 
   const priorityColors: Record<string, string> = {
-    low: 'bg-green-100 text-green-800',
-    medium: 'bg-yellow-100 text-yellow-800',
-    high: 'bg-red-100 text-red-800',
+    low: "bg-beige-100 text-beige-800",
+    medium: "bg-beige-200 text-beige-900",
+    high: "bg-beige-300 text-beige-950",
   };
 
   return (
-    <Card className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
+    // FIX: Added the `group` class here.
+    // This allows us to control the visibility of child elements based on the hover state of this parent Card component.
+    <Card className="group bg-cream-50 rounded-lg border border-beige-200 shadow-sm hover:shadow-md transition-shadow">
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
-          <CardTitle className="text-lg font-semibold">{task.title}</CardTitle>
-          <div className="flex space-x-1">
+          <CardTitle className="text-lg font-semibold text-beige-900">{task.title}</CardTitle>
+          {/* FIX: Added classes to this container.
+              - `opacity-0` makes the buttons invisible by default.
+              - `group-hover:opacity-100` makes them visible when the parent `group` (the Card) is hovered.
+              - `transition-opacity` and `duration-300` add a smooth fade-in/out effect.
+          */}
+          <div className="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
             <Button
               variant="ghost"
               size="sm"
@@ -88,30 +104,42 @@ export default function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
       <CardContent className="pt-0">
         <div className="space-y-3">
           {task.priority && (
-            <Badge variant="outline" className={`${priorityColors[task.priority]}`}>
-              {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)} Priority
+            <Badge
+              variant="outline"
+              className={`${priorityColors[task.priority]}`}
+            >
+              {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}{" "}
+              Priority
             </Badge>
           )}
-          
-          {task.dueDate && (
-            <div className="flex items-center text-sm text-gray-500">
-              <span>Due: {format(new Date(task.dueDate), 'MMM d, yyyy')}</span>
-            </div>
-          )}
-          
-          <div className="flex items-center justify-between pt-2">
-            {task.assigneeId ? (
-              <div className="flex items-center">
-                <Avatar className="h-6 w-6 mr-2">
-                  <AvatarImage src={assignee?.avatar} alt={assignee?.name || "Assignee"} />
-                  <AvatarFallback>{assignee?.name?.charAt(0) || "U"}</AvatarFallback>
-                </Avatar>
-                <span className="text-xs text-gray-600">{assignee?.name || "Loading..."}</span>
-              </div>
+
+          <div className="flex items-center text-sm text-gray-500">
+            {task.dueDate ? (
+              <span>Due: {format(new Date(task.dueDate), "MMM d, yyyy")}</span>
             ) : (
-              <span className="text-xs text-gray-500">Unassigned</span>
+              <span className="text-gray-400">No due date</span>
             )}
-            
+          </div>
+
+          <div className="flex items-center justify-between pt-2">
+            <div className="flex items-center">
+              <Avatar className="h-6 w-6 mr-2">
+                <AvatarImage
+                  src={assignee?.avatar}
+                  alt={getAssigneeName()}
+                />
+                <AvatarFallback>
+                  {getAssigneeName().charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <span className={cn(
+                "text-xs",
+                task.assigneeId ? "text-gray-600" : "text-gray-500"
+              )}>
+                {getAssigneeName()}
+              </span>
+            </div>
+
             {task.comments && task.comments.length > 0 && (
               <div className="flex items-center text-gray-500">
                 <MessageSquare className="h-3 w-3 mr-1" />

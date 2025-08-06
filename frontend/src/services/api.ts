@@ -13,7 +13,7 @@ const handleError = (error: unknown, message: string) => {
 };
 
 // Helper function for API requests
-async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> {
+export async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> {
   try {
     console.log(`Making API request to: ${API_URL}${endpoint}`);
     const response = await fetch(`${API_URL}${endpoint}`, {
@@ -40,24 +40,6 @@ async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> 
   }
 }
 
-// Auth services
-export const authService = {
-  login: async (credentials: LoginCredentials): Promise<User> => {
-    try {
-      console.log("Attempting login with:", credentials.email);
-      const { user } = await fetchAPI<{ success: boolean; user: User }>('/users/login', {
-        method: 'POST',
-        body: JSON.stringify(credentials),
-      });
-      console.log("Login successful:", user);
-      return user;
-    } catch (error) {
-      handleError(error, "Login failed. Please check your credentials and try again.");
-      throw error;
-    }
-  },
-};
-
 // User services
 export const userService = {
   getUsers: async (): Promise<User[]> => {
@@ -74,6 +56,18 @@ export const userService = {
       return await fetchAPI<User>(`/users/${userId}`);
     } catch (error) {
       handleError(error, `Failed to fetch user with ID: ${userId}`);
+      throw error;
+    }
+  },
+
+  createUser: async (userData: { name: string; email: string }): Promise<User> => {
+    try {
+      return await fetchAPI<User>('/users', {
+        method: 'POST',
+        body: JSON.stringify(userData),
+      });
+    } catch (error) {
+      handleError(error, "Failed to create user");
       throw error;
     }
   },
@@ -116,13 +110,15 @@ export const taskService = {
     }
   },
   
-  updateTask: async (task: Task): Promise<Task> => {
+  updateTask: async (task: Task, userId: string): Promise<Task> => {
     try {
       console.log(`Updating task ${task.id}:`, task);
-      const result = await fetchAPI<Task>(`/tasks/${task.id}`, {
-        method: 'PUT',
-        body: JSON.stringify(task),
-      });
+      const result = await fetchAPI<Task>(`/tasks/${task.id}`,
+        {
+          method: 'PUT',
+          body: JSON.stringify({ ...task, userId }),
+        }
+      );
       console.log("Task updated successfully:", result);
       return result;
     } catch (error) {
@@ -131,12 +127,15 @@ export const taskService = {
     }
   },
   
-  deleteTask: async (taskId: string): Promise<void> => {
+  deleteTask: async (taskId: string, userId: string): Promise<void> => {
     try {
       console.log(`Deleting task: ${taskId}`);
-      await fetchAPI<{ message: string }>(`/tasks/${taskId}`, {
-        method: 'DELETE',
-      });
+      await fetchAPI<{ message: string }>(`/tasks/${taskId}`,
+        {
+          method: 'DELETE',
+          body: JSON.stringify({ userId }),
+        }
+      );
       console.log("Task deleted successfully");
     } catch (error) {
       handleError(error, "Failed to delete task");
@@ -191,7 +190,6 @@ export const activityService = {
 };
 
 export default {
-  authService,
   userService,
   taskService,
   projectService,

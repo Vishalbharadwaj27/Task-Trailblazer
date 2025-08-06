@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { Task, TaskStatus } from "@/lib/types";
 import { userService } from "@/services/api";
@@ -22,7 +21,7 @@ export function useTaskForm({ initialStatus, open }: UseTaskFormProps) {
     description: "",
     status: initialStatus,
     assigneeId: user?.id || null,
-    dueDate: new Date(),
+    dueDate: null,
     createdBy: user?.id || "",
     priority: "medium",
     labels: []
@@ -92,7 +91,7 @@ export function useTaskForm({ initialStatus, open }: UseTaskFormProps) {
       description: "",
       status: initialStatus,
       assigneeId: user?.id || null,
-      dueDate: new Date(),
+      dueDate: null,
       createdBy: user?.id || "",
       priority: "medium",
       labels: []

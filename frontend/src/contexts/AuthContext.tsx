@@ -1,7 +1,7 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { User, LoginCredentials } from "@/lib/types";
-import { authService } from "@/services/api";
+import { authService } from "@/features/auth/api/authService";
 import { toast } from "sonner";
 
 interface AuthContextType {
@@ -19,25 +19,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Helper function to persist user data
+  const persistUser = useCallback((userData: User) => {
+    setUser(userData);
+    setIsAuthenticated(true);
+    localStorage.setItem("currentUser", JSON.stringify(userData));
+    localStorage.setItem("isAuthenticated", "true");
+  }, []);
+
   useEffect(() => {
     // Check if user is already logged in
     const storedUser = localStorage.getItem("currentUser");
     const authStatus = localStorage.getItem("isAuthenticated");
     
     if (storedUser && authStatus === "true") {
-      setUser(JSON.parse(storedUser));
-      setIsAuthenticated(true);
+      persistUser(JSON.parse(storedUser) as User);
     }
-  }, []);
+  }, [persistUser]);
 
   const login = async (credentials: LoginCredentials): Promise<void> => {
     setLoading(true);
     try {
       const userData = await authService.login(credentials);
-      setUser(userData);
-      setIsAuthenticated(true);
-      localStorage.setItem("currentUser", JSON.stringify(userData));
-      localStorage.setItem("isAuthenticated", "true");
+      persistUser(userData);
       toast.success("Login successful!");
     } catch (error) {
       toast.error("Login failed. Please try again.");

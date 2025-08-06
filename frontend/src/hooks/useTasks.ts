@@ -125,9 +125,9 @@ export function useTasks(refreshTrigger = 0) {
   };
 
   // Handle deleting a task
-  const deleteTask = async (taskId: string) => {
+  const deleteTask = async (taskId: string, userId: string) => {
     try {
-      await taskService.deleteTask(taskId);
+      await taskService.deleteTask(taskId, userId);
       
       // Remove task from all columns
       setTodoTasks(prev => prev.filter(task => task.id !== taskId));
@@ -143,9 +143,9 @@ export function useTasks(refreshTrigger = 0) {
   };
 
   // Update task data
-  const updateTask = async (updatedTask: Task) => {
+  const updateTask = async (updatedTask: Task, userId: string) => {
     try {
-      const result = await taskService.updateTask(updatedTask);
+      const result = await taskService.updateTask(updatedTask, userId);
       const originalStatus = updatedTask.status;
 
       // Update in the correct list based on status

@@ -98,22 +98,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               </Link>
             ))}
           </nav>
-          <div className="border-t p-4">
-            <div className="flex items-center space-x-4">
-              <Avatar>
-                <AvatarImage src={user?.avatar} alt={user?.name} />
-                <AvatarFallback>
-                  {getInitials(user?.name)}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{user?.name || 'User'}</p>
-                <p className="text-xs text-muted-foreground truncate">
-                  {user?.email || 'user@example.com'}
-                </p>
-              </div>
-            </div>
-          </div>
+          {/* Removed user profile section from mobile sidebar */}
         </div>
       </div>
 
@@ -141,22 +126,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               </Link>
             ))}
           </nav>
-          <div className="border-t p-4">
-            <div className="flex items-center space-x-4">
-              <Avatar>
-                <AvatarImage src={user?.avatar} alt={user?.name} />
-                <AvatarFallback>
-                  {getInitials(user?.name)}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{user?.name || 'User'}</p>
-                <p className="text-xs text-muted-foreground truncate">
-                  {user?.email || 'user@example.com'}
-                </p>
-              </div>
-            </div>
-          </div>
+          {/* Removed user profile section from desktop sidebar */}
         </div>
       </div>
 

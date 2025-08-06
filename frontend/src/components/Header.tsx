@@ -1,17 +1,15 @@
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, LogOut } from "lucide-react";
 import { useAuth } from "@/features/auth/context/AuthContext";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useNavigate, NavLink } from "react-router-dom";
+import AddAssignerForm from "./AddAssignerForm";
 
-interface HeaderProps {
-  onCreateTask?: () => void;
-}
-
-export default function Header({ onCreateTask }: HeaderProps) {
-  const { user, logout, isLoading } = useAuth();
+export default function Header() {
+  const { logout, isLoading } = useAuth();
   const navigate = useNavigate();
+  const [isAddAssignerOpen, setIsAddAssignerOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -20,7 +18,7 @@ export default function Header({ onCreateTask }: HeaderProps) {
 
   if (isLoading) {
     return (
-      <header className="bg-white shadow-sm border-b">
+      <header className="bg-beige-100 shadow-sm border-b border-beige-300">
         <div className="container mx-auto px-4 py-3 flex justify-between items-center">
           <div className="h-8 w-24 bg-gray-200 rounded animate-pulse"></div>
           <div className="h-10 w-10 rounded-full bg-gray-200 animate-pulse"></div>
@@ -30,10 +28,10 @@ export default function Header({ onCreateTask }: HeaderProps) {
   }
 
   return (
-    <header className="bg-white shadow-sm border-b">
+    <header className="bg-beige-100 shadow-sm border-b border-beige-300">
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
         <div className="flex items-center">
-          <h1 className="text-xl font-bold text-primary mr-6">
+          <h1 className="text-xl font-bold text-beige-800 mr-6">
             <NavLink to="/">Kanban</NavLink>
           </h1>
           
@@ -83,40 +81,26 @@ export default function Header({ onCreateTask }: HeaderProps) {
         </div>
         
         <div className="flex items-center gap-3">
-          {onCreateTask && (
-            <Button 
-              onClick={onCreateTask} 
-              size="sm" 
-              className="hidden md:flex" 
-              variant="default"
-            >
-              <PlusCircle className="h-4 w-4 mr-1" />
-              New Task
-            </Button>
-          )}
-          
-          <div className="flex items-center gap-2">
-            <Avatar className="h-8 w-8">
-              <AvatarImage src={user?.avatar} alt={user?.name || "User"} />
-              <AvatarFallback>{user?.name?.charAt(0) || "U"}</AvatarFallback>
-            </Avatar>
-            
-            <div className="hidden md:block">
-              <p className="text-sm font-medium">{user?.name}</p>
-              <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
-            </div>
-            
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="ml-2 text-gray-500 hover:text-gray-700"
-              onClick={handleLogout}
-            >
-              <LogOut className="h-5 w-5" />
-            </Button>
-          </div>
+          <Button
+            size="sm"
+            className="hidden md:flex bg-amber-600 hover:bg-amber-700"
+            onClick={() => setIsAddAssignerOpen(true)}
+          >
+            <PlusCircle className="h-4 w-4 mr-1" />
+            Add Assigner
+          </Button>
+
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="ml-2 text-gray-500 hover:text-gray-700"
+            onClick={handleLogout}
+          >
+            <LogOut className="h-5 w-5" />
+          </Button>
         </div>
       </div>
+      <AddAssignerForm open={isAddAssignerOpen} onClose={() => setIsAddAssignerOpen(false)} />
     </header>
   );
 }

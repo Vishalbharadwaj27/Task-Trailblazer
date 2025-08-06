@@ -1,14 +1,12 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
-import { Task, TaskStatus } from "@/lib/types";
+import { Task, TaskStatus, User } from "@/lib/types";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/features/auth/context/AuthContext";
-import { taskService } from "@/services/api";
 import { toast } from "sonner";
 
 // Import our new components
@@ -29,27 +27,26 @@ interface CreateTaskFormProps {
   onClose: () => void;
   onCreateTask: (task: Omit<Task, "id" | "createdAt" | "comments">) => Promise<Task | void>;
   initialStatus: TaskStatus;
+  users: User[];
 }
 
-export default function CreateTaskForm({ 
-  open, 
-  onClose, 
+export default function CreateTaskForm({
+  open,
+  onClose,
   onCreateTask,
-  initialStatus = "todo"
+  initialStatus = "todo",
+  users
 }: CreateTaskFormProps) {
   const { user, isLoading: isAuthLoading } = useAuth();
-  const { 
-    formData, 
-    setFormData, 
-    handleChange, 
-    resetForm, 
-    users, 
-    isLoadingUsers, 
-    isSubmitting, 
-    setIsSubmitting 
-  } = useTaskForm({ 
+  const {
+    formData,
+    handleChange,
+    resetForm,
+    isSubmitting,
+    setIsSubmitting
+  } = useTaskForm({
     initialStatus,
-    open 
+    open
   });
 
   if (isAuthLoading) {
@@ -89,17 +86,16 @@ export default function CreateTaskForm({
     setIsSubmitting(true);
     
     try {
-      // Create the task data with all required fields
       const taskData = {
         ...formData,
         title: formData.title.trim(),
         description: formData.description?.trim() || "",
         status: formData.status || initialStatus,
-        dueDate: formData.dueDate || new Date(),
+        dueDate: formData.dueDate || null,
         priority: formData.priority || "medium",
         labels: formData.labels || [],
         createdBy: user?.id || "1",
-        assigneeId: formData.assigneeId || user?.id || "1"
+        assigneeId: formData.assigneeId || null
       };
 
       // Call the parent's onCreateTask with the complete task data
@@ -186,7 +182,7 @@ export default function CreateTaskForm({
               value={formData.assigneeId || "unassigned"}
               onValueChange={(value) => handleChange('assigneeId', value === "unassigned" ? null : value)}
               users={users}
-              isLoading={isLoadingUsers}
+              isLoading={false}
             />
             
             <DueDatePicker

@@ -1,5 +1,5 @@
 
-import { Task, TaskStatus } from "@/lib/types";
+import { Task, TaskStatus, User } from "@/lib/types";
 import { Plus, Trash2, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ interface KanbanColumnProps {
   status: TaskStatus;
   title: string;
   tasks: Task[];
+  users: User[];
   onEditTask: (task: Task) => void;
   onDeleteTask: (taskId: string) => void;
   onDrop: (e: React.DragEvent, newStatus: TaskStatus) => void;
@@ -24,6 +25,7 @@ export default function KanbanColumn({
   status,
   title,
   tasks = [],
+  users,
   onEditTask,
   onDeleteTask,
   onDrop,
@@ -36,12 +38,12 @@ export default function KanbanColumn({
   const [isDraggingOver, setIsDraggingOver] = useState(false);
 
   const statusColors = {
-    todo: "bg-blue-500",
-    inProgress: "bg-amber-500",
-    done: "bg-green-500"
+    todo: "bg-beige-500",
+    inProgress: "bg-beige-600",
+    done: "bg-beige-700"
   };
 
-  const color = statusColors[status] || "bg-gray-500";
+  const color = statusColors[status] || "bg-beige-400";
 
   const handleDeleteTask = async (taskId: string) => {
     if (isDeleting) return;
@@ -129,6 +131,7 @@ export default function KanbanColumn({
               <DraggableTaskCard
                 task={task}
                 status={status}
+                users={users}
                 onEdit={onEditTask}
                 onDelete={onDeleteTask}
                 onDragStart={(e) => {
@@ -136,27 +139,6 @@ export default function KanbanColumn({
                   e.dataTransfer.setData("fromStatus", status);
                 }}
               />
-              {hoveredTaskId === task.id && (
-                <div className="absolute right-2 top-2 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 bg-white/80 hover:bg-white"
-                    onClick={() => onEditTask(task)}
-                  >
-                    <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 bg-white/80 hover:bg-white text-destructive hover:text-destructive"
-                    onClick={() => handleDeleteTask(task.id)}
-                    disabled={isDeleting}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              )}
             </div>
           ))
         ) : (

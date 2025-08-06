@@ -24,15 +24,17 @@ import { Task, TaskStatus } from "@/lib/types";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { userService } from "@/services/api";
 import { toast } from "sonner";
+import { useAuth } from "@/features/auth/context/AuthContext";
 
 interface EditTaskFormProps {
   task: Task | null;
   open: boolean;
   onClose: () => void;
-  onUpdateTask: (task: Task) => void;
+  onUpdateTask: (task: Task, userId: string) => void;
 }
 
 export default function EditTaskForm({ task, open, onClose, onUpdateTask }: EditTaskFormProps) {
+  const { user } = useAuth();
   const [formData, setFormData] = useState<Partial<Task>>({});
   const [users, setUsers] = useState<Array<{ id: string; name: string }>>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -92,7 +94,7 @@ export default function EditTaskForm({ task, open, onClose, onUpdateTask }: Edit
         status: (formData.status as TaskStatus) || task.status
       };
       
-      onUpdateTask(updatedTask);
+      onUpdateTask(updatedTask, user.id);
     } catch (error) {
       console.error("Error updating task:", error);
       toast.error("Failed to update task");

@@ -12,10 +12,12 @@ const port = process.env.PORT || 5000;
 const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
 
 // Middleware
+// CORS configuration to allow requests from the frontend
 app.use(cors({
-  origin: frontendUrl,
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+  origin: "http://localhost:8080", // Allow only this origin to access
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH"], // Allowed methods
+  allowedHeaders: ["Content-Type", "Authorization"], // Allowed headers
+  credentials: true // Allow cookies to be sent
 }));
 app.use(express.json());
 
@@ -71,46 +73,11 @@ async function connectToMongoDB() {
     process.exit(1);
   }
 
-  // Initialize database with some seed data if empty
-  const usersCount = await db.collection('users').countDocuments();
-  if (usersCount === 0) {
-    console.log("Initializing database with seed data...");
-    
-    // Seed users
-    const users = [
-      { 
-        id: "1", 
-        name: "Alex Johnson", 
-        email: "alex@example.com", 
-        avatar: "https://i.pravatar.cc/150?img=1",
-        role: "admin" 
-      },
-      { 
-        id: "2", 
-        name: "Sarah Miller", 
-        email: "sarah@example.com", 
-        avatar: "https://i.pravatar.cc/150?img=2",
-        role: "manager" 
-      },
-      { 
-        id: "3", 
-        name: "David Kim", 
-        email: "david@example.com", 
-        avatar: "https://i.pravatar.cc/150?img=3",
-        role: "member" 
-      },
-      { 
-        id: "4", 
-        name: "Emily Chen", 
-        email: "emily@example.com", 
-        avatar: "https://i.pravatar.cc/150?img=4",
-        role: "member" 
-      }
-    ];
-    
-    await db.collection('users').insertMany(users);
-    console.log("Users seeded successfully");
-  }
+  // Clear the users and activities collections on startup
+  await db.collection('users').deleteMany({});
+  await db.collection('activities').deleteMany({});
+  console.log("Users and activities collections cleared");
+
 })();
 
 // API Routes
@@ -120,15 +87,43 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date() });
 });
 
-// Users
-app.get('/api/users', async (req, res) => {
+// Create a new project
+app.post('/api/projects', async (req, res) => {
   try {
-    const users = await db.collection('users').find().toArray();
-    console.log(`Retrieved ${users.length} users`);
-    res.json(users);
+    console.log(`Creating new project: ${req.body.name}`);
+    const newProject = {
+      ...req.body,
+      id: new ObjectId().toString(),
+      createdAt: new Date(),
+      tasks: [],
+      members: []
+    };
+    
+    const result = await db.collection('projects').insertOne(newProject);
+    console.log(`Project created with ID: ${newProject.id}`);
+    
+    res.status(201).json(newProject);
   } catch (error) {
-    console.error("Error fetching users:", error);
-    res.status(500).json({ message: "Error fetching users" });
+    console.error("Error creating project:", error);
+    res.status(500).json({ message: "Error creating project" });
+  }
+});
+
+app.post('/api/users', async (req, res) => {
+  try {
+    const { name, email } = req.body;
+    const newUser = {
+      id: new ObjectId().toString(),
+      name,
+      email,
+      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
+      role: "member",
+    };
+    await db.collection('users').insertOne(newUser);
+    res.status(201).json(newUser);
+  } catch (error) {
+    console.error("Error creating user:", error);
+    res.status(500).json({ message: "Error creating user" });
   }
 });
 
@@ -156,7 +151,7 @@ app.post('/api/users/login', async (req, res) => {
       console.log(`User found: ${user.id}, ${user.name}`);
     }
     
-    res.json({ success: true, user });
+    res.json({ success: true, user, token: 'dummy-token' });
   } catch (error) {
     console.error("Login error:", error);
     res.status(500).json({ message: "Error during login" });
@@ -235,7 +230,7 @@ app.post('/api/tasks', async (req, res) => {
 app.put('/api/tasks/:id', async (req, res) => {
   try {
     const taskId = req.params.id;
-    const updatedTask = req.body;
+    const { userId, ...updatedTask } = req.body;
     
     // Get old task for activity logging
     const oldTask = await db.collection('kanban').findOne({ id: taskId });
@@ -253,7 +248,7 @@ app.put('/api/tasks/:id', async (req, res) => {
     if (oldTask && oldTask.status !== updatedTask.status) {
       const activity = {
         id: new ObjectId().toString(),
-        userId: updatedTask.createdBy,
+        userId: userId,
         action: `moved task '${updatedTask.title}' to ${updatedTask.status === "todo" ? "To Do" : updatedTask.status === "inProgress" ? "In Progress" : "Done"}`,
         taskId: taskId,
         projectId: "p1",
@@ -272,6 +267,7 @@ app.put('/api/tasks/:id', async (req, res) => {
 app.delete('/api/tasks/:id', async (req, res) => {
   try {
     const taskId = req.params.id;
+    const { userId } = req.body;
     const task = await db.collection('kanban').findOne({ id: taskId });
     
     if (!task) {
@@ -283,7 +279,7 @@ app.delete('/api/tasks/:id', async (req, res) => {
     // Log activity
     const activity = {
       id: new ObjectId().toString(),
-      userId: task.createdBy,
+      userId: userId,
       action: `deleted task '${task.title}'`,
       projectId: "p1",
       createdAt: new Date()
